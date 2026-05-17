@@ -145,6 +145,7 @@ function configureSupabase() {
     return;
   }
 
+  els.configNotice.hidden = true;
   supabaseClient = window.supabase.createClient(config.supabaseUrl, config.supabaseAnonKey);
 }
 
@@ -375,4 +376,3 @@ function offsetDate(date, offset) {
   next.setDate(next.getDate() + offset);
   return next.toISOString().slice(0, 10);
 }
-
