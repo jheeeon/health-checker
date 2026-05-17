@@ -1,0 +1,325 @@
+:root {
+  --bg: #f4f6f1;
+  --surface: #ffffff;
+  --surface-muted: #edf2e6;
+  --ink: #1d241c;
+  --muted: #61705b;
+  --line: #d9e0d3;
+  --accent: #2f6f5f;
+  --accent-strong: #1e5145;
+  --warm: #d98b45;
+  --danger: #b54747;
+  --shadow: 0 18px 50px rgba(45, 64, 40, 0.12);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+button,
+textarea {
+  font: inherit;
+}
+
+.app-shell {
+  width: min(1180px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 32px 0 56px;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 420px);
+  gap: 24px;
+  align-items: end;
+  padding: 28px 0 24px;
+}
+
+.eyebrow,
+.section-kicker,
+.summary-label {
+  margin: 0;
+  color: var(--accent);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+h1,
+h2,
+h3,
+p {
+  overflow-wrap: anywhere;
+}
+
+h1 {
+  margin: 8px 0 10px;
+  font-size: clamp(2.3rem, 6vw, 5rem);
+  line-height: 0.95;
+  letter-spacing: 0;
+}
+
+h2 {
+  margin: 6px 0 14px;
+  font-size: 1.55rem;
+  line-height: 1.15;
+}
+
+h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.lede {
+  max-width: 660px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+
+.summary-panel {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--line);
+  box-shadow: var(--shadow);
+}
+
+.summary-panel div {
+  min-width: 0;
+  padding: 16px;
+  background: var(--surface);
+}
+
+.summary-panel strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 1.15rem;
+}
+
+.notice {
+  display: grid;
+  gap: 4px;
+  margin: 0 0 18px;
+  padding: 14px 16px;
+  border: 1px solid rgba(217, 139, 69, 0.45);
+  border-radius: 8px;
+  background: #fff6ec;
+  color: #5c3b1c;
+}
+
+.today-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.today-card,
+.recovery-card,
+.day-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.today-card,
+.recovery-card {
+  padding: 22px;
+}
+
+.goal-text {
+  margin: 0 0 18px;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.checklist {
+  display: grid;
+  gap: 10px;
+}
+
+.check-row {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  min-height: 46px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcf8;
+  cursor: pointer;
+}
+
+.check-row input {
+  width: 20px;
+  height: 20px;
+  margin: 1px 0 0;
+  accent-color: var(--accent);
+}
+
+.check-row span {
+  line-height: 1.45;
+}
+
+.score-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.score-control {
+  display: grid;
+  gap: 8px;
+}
+
+.score-control legend {
+  padding: 0;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.score-options {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+}
+
+.score-options button {
+  min-height: 38px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcf8;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.score-options button.is-selected {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: white;
+}
+
+.memo-field {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+textarea {
+  width: 100%;
+  resize: vertical;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  color: var(--ink);
+  background: #fbfcf8;
+  line-height: 1.5;
+}
+
+.program-section {
+  margin-top: 28px;
+}
+
+.section-header {
+  margin-bottom: 14px;
+}
+
+.program-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.day-card {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+}
+
+.day-card.is-today {
+  border-color: var(--accent);
+  outline: 3px solid rgba(47, 111, 95, 0.16);
+}
+
+.day-card.is-complete {
+  background: var(--surface-muted);
+}
+
+.day-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.day-goal {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.mini-list {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--ink);
+  line-height: 1.55;
+}
+
+@media (max-width: 900px) {
+  .hero,
+  .today-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .program-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  .app-shell {
+    width: min(100% - 20px, 1180px);
+    padding-top: 18px;
+  }
+
+  .hero {
+    padding-top: 12px;
+  }
+
+  .summary-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .program-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .today-card,
+  .recovery-card,
+  .day-card {
+    padding: 16px;
+  }
+
+  h1 {
+    font-size: 2.6rem;
+  }
+}
+

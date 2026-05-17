@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light">
+    <title>Health Checker</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <script defer src="app.js"></script>
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">7일 회복 루틴</p>
+          <h1>Health Checker</h1>
+          <p class="lede">운동을 더 세게 하는 대신, 회복 가능한 리듬을 매일 확인합니다.</p>
+        </div>
+        <section class="summary-panel" aria-label="진행 요약">
+          <div>
+            <span class="summary-label">오늘</span>
+            <strong id="todayLabel">-</strong>
+          </div>
+          <div>
+            <span class="summary-label">진행률</span>
+            <strong id="progressLabel">0%</strong>
+          </div>
+          <div>
+            <span class="summary-label">저장 상태</span>
+            <strong id="saveStatus">준비 중</strong>
+          </div>
+        </section>
+      </header>
+
+      <section class="notice" id="configNotice" hidden>
+        <strong>Supabase 설정이 필요합니다.</strong>
+        <span>`config.sample.js`를 `config.js`로 복사한 뒤 프로젝트 URL과 anon key를 입력하면 기기 간 동기화가 켜집니다.</span>
+      </section>
+
+      <section class="today-layout">
+        <article class="today-card">
+          <p class="section-kicker">오늘의 목표</p>
+          <h2 id="todayTitle">불러오는 중</h2>
+          <p id="todayGoal" class="goal-text"></p>
+          <div id="todayChecklist" class="checklist"></div>
+        </article>
+
+        <article class="recovery-card">
+          <p class="section-kicker">회복 기록</p>
+          <h2>몸 상태</h2>
+          <div class="score-grid" id="scoreGrid"></div>
+          <label class="memo-field">
+            <span>메모</span>
+            <textarea id="memoInput" rows="5" placeholder="오늘 몸 상태, 컨디션, 산책 중 느낀 점을 적어둡니다."></textarea>
+          </label>
+        </article>
+      </section>
+
+      <section class="program-section" aria-labelledby="programHeading">
+        <div class="section-header">
+          <p class="section-kicker">전체 프로그램</p>
+          <h2 id="programHeading">7일 계획</h2>
+        </div>
+        <div id="programList" class="program-grid"></div>
+      </section>
+    </main>
+  </body>
+</html>
+
