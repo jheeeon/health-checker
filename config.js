@@ -1,5 +1,4 @@
 window.HEALTH_CHECKER_CONFIG = {
-  supabaseUrl: "https://YOUR_PROJECT_ID.supabase.co",
-  supabaseAnonKey: "YOUR_SUPABASE_ANON_KEY"
+  supabaseUrl: "https://pxasdddwsctetdvxoxbh.supabase.co",
+  supabaseAnonKey: "sb_publishable_czx1uK3E5jingjzUGTzpwA_OD2B3KPs"
 };
-
