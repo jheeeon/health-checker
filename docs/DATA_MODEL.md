@@ -14,11 +14,11 @@
 
 2026-05-17 현재 앱은 아래 구조로 동작한다.
 
-- 7일 운동 프로그램 정의는 `app.js`의 `program` 배열에 정적으로 들어 있다.
-- Supabase에는 `app_state`, `daily_logs`만 사용한다.
-- 체크 상태는 `daily_logs.checked_items` JSON 안에 저장한다.
-
-현재 방식은 빠르게 MVP를 만들기에는 좋지만, 체크리스트 문구 수정, 항목 추가/삭제, 순서 변경에는 약하다.
+- 7일 운동 프로그램 정의는 Supabase `program_days`, `program_items`에서 불러온다.
+- 체크 상태는 `daily_item_checks`에 저장한다.
+- 회복 기록은 `daily_logs`에 저장한다.
+- `app.js`의 기존 프로그램 배열은 Supabase 설정이 없을 때의 로컬 fallback 용도로만 남긴다.
+- 기존 `daily_logs.checked_items` 컬럼은 더 이상 사용하지 않는다.
 
 ## 목표 설계
 
@@ -324,17 +324,17 @@ create table daily_item_checks (
 2. `회복 기록 저장` 버튼을 누른다.
 3. 앱은 해당 `day_index`의 `daily_logs`를 upsert한다.
 
-## 마이그레이션 메모
+## checked_items 정리 메모
 
-현재 운영 DB에는 `daily_logs.checked_items jsonb`가 존재한다.
+현재 운영 DB는 `program_days`, `program_items`, `daily_item_checks`를 사용한다.
 
-다음 단계에서 DB화할 때 권장 순서:
+`daily_logs.checked_items`는 마이그레이션하지 않기로 결정했다.
 
-1. `program_days`, `program_items`, `daily_item_checks` 테이블을 추가한다.
-2. 기존 7일 프로그램 데이터를 `program_days`, `program_items`에 seed한다.
-3. 앱을 `program` 하드코딩 대신 Supabase 조회 방식으로 변경한다.
-4. 기존 `daily_logs.checked_items` 값을 `daily_item_checks`로 옮긴다.
-5. 마이그레이션 검증 후 `daily_logs.checked_items` 컬럼 제거를 검토한다.
+정리 순서:
+
+1. 앱이 `daily_item_checks`에 체크 상태를 저장하는지 확인한다.
+2. 기존 `checked_items` 값은 운영 데이터로 보존하지 않는다.
+3. Supabase에서 `daily_logs.checked_items` 컬럼을 삭제한다.
 
 ## 보안 메모
 
@@ -352,4 +352,3 @@ create table daily_item_checks (
 
 - URL과 Supabase 설정을 아는 사람은 데이터를 수정할 수 있다.
 - 개인 건강 기록을 민감 정보로 다루고 싶어지는 시점에는 로그인과 RLS 정책을 다시 설계해야 한다.
-
