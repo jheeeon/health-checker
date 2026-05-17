@@ -17,11 +17,16 @@
   box-sizing: border-box;
 }
 
+html {
+  overscroll-behavior-y: contain;
+}
+
 body {
   margin: 0;
   min-width: 320px;
   background: var(--bg);
   color: var(--ink);
+  overscroll-behavior-y: contain;
 }
 
 [hidden] {

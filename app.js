@@ -114,6 +114,11 @@ let saveTimer = null;
 let activeDay = 1;
 let currentDay = 1;
 let recoveryDraft = {};
+let pullStartY = null;
+let pullDistance = 0;
+let isRefreshing = false;
+
+const pullThreshold = 86;
 
 const els = {
   todayLabel: document.querySelector("#todayLabel"),
@@ -133,6 +138,7 @@ init();
 
 async function init() {
   renderStaticControls();
+  setupPullToRefresh();
   configureSupabase();
   await loadState();
   currentDay = getTodayDayIndex();
@@ -254,6 +260,43 @@ function renderStaticControls() {
   });
 }
 
+function setupPullToRefresh() {
+  window.addEventListener("touchstart", (event) => {
+    if (window.scrollY > 0 || isRefreshing) return;
+    pullStartY = event.touches[0].clientY;
+    pullDistance = 0;
+  }, { passive: true });
+
+  window.addEventListener("touchmove", (event) => {
+    if (pullStartY === null || isRefreshing) return;
+
+    const nextDistance = event.touches[0].clientY - pullStartY;
+    if (nextDistance <= 0 || window.scrollY > 0) {
+      resetPullState();
+      return;
+    }
+
+    pullDistance = Math.min(nextDistance * 0.55, 120);
+
+    if (pullDistance > 12) {
+      event.preventDefault();
+    }
+  }, { passive: false });
+
+  window.addEventListener("touchend", () => {
+    if (pullStartY === null || isRefreshing) return;
+
+    if (pullDistance >= pullThreshold) {
+      refreshState();
+      return;
+    }
+
+    resetPullState();
+  }, { passive: true });
+
+  window.addEventListener("touchcancel", resetPullState, { passive: true });
+}
+
 function render() {
   renderSummary();
   renderToday();
@@ -336,6 +379,34 @@ function selectDay(day) {
   syncRecoveryDraft();
   render();
   document.querySelector(".today-card")?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+async function refreshState() {
+  const keepDraft = isRecoveryDirty();
+  const draftSnapshot = { ...recoveryDraft };
+
+  isRefreshing = true;
+  setSaveStatus("새로고침 중");
+
+  await loadState();
+  currentDay = getTodayDayIndex();
+
+  if (keepDraft) {
+    recoveryDraft = draftSnapshot;
+  } else {
+    syncRecoveryDraft();
+  }
+
+  render();
+  window.setTimeout(() => {
+    isRefreshing = false;
+    resetPullState();
+  }, 450);
+}
+
+function resetPullState() {
+  pullStartY = null;
+  pullDistance = 0;
 }
 
 function scheduleSave(day, delay = 120) {
