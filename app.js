@@ -1,4 +1,4 @@
-const program = [
+let program = [
   {
     day: 1,
     title: "회복 시작일",
@@ -93,6 +93,7 @@ const scoreFields = [
 
 const fallbackState = {
   programStartDate: new Date().toISOString().slice(0, 10),
+  itemChecks: {},
   logs: Object.fromEntries(program.map((day) => [
     day.day,
     {
@@ -164,6 +165,7 @@ async function loadState() {
   if (!supabaseClient) {
     const saved = localStorage.getItem("health-checker-state");
     if (saved) appState = JSON.parse(saved);
+    appState.itemChecks ??= {};
     return;
   }
 
@@ -189,6 +191,9 @@ async function loadState() {
     appState.programStartDate = appData.program_start_date;
   }
 
+  const programLoaded = await loadProgramDefinition();
+  if (!programLoaded) return;
+
   const { data: logs, error: logsError } = await supabaseClient
     .from("daily_logs")
     .select("*")
@@ -202,16 +207,67 @@ async function loadState() {
   if (!logs?.length) {
     const rows = program.map((day) => ({
       day_index: day.day,
-      log_date: offsetDate(new Date(appState.programStartDate), day.day - 1),
-      checked_items: {}
+      log_date: offsetDate(new Date(appState.programStartDate), day.day - 1)
     }));
     await supabaseClient.from("daily_logs").insert(rows);
-    appState.logs = structuredClone(fallbackState.logs);
+    appState.logs = Object.fromEntries(rows.map((log) => [log.day_index, normalizeLog(log)]));
   } else {
     appState.logs = Object.fromEntries(logs.map((log) => [log.day_index, normalizeLog(log)]));
   }
 
+  const { data: checks, error: checksError } = await supabaseClient
+    .from("daily_item_checks")
+    .select("*");
+
+  if (checksError) {
+    setSaveStatus("불러오기 실패");
+    return;
+  }
+
+  appState.itemChecks = Object.fromEntries((checks ?? []).map((check) => [String(check.item_id), Boolean(check.is_checked)]));
+
   setSaveStatus("저장됨");
+}
+
+async function loadProgramDefinition() {
+  const { data: days, error: daysError } = await supabaseClient
+    .from("program_days")
+    .select("*")
+    .eq("is_active", true)
+    .order("sort_order");
+
+  if (daysError) {
+    setSaveStatus("프로그램 불러오기 실패");
+    return false;
+  }
+
+  const { data: items, error: itemsError } = await supabaseClient
+    .from("program_items")
+    .select("*")
+    .eq("is_active", true)
+    .order("day_index")
+    .order("item_order");
+
+  if (itemsError) {
+    setSaveStatus("프로그램 불러오기 실패");
+    return false;
+  }
+
+  program = (days ?? []).map((day) => ({
+    day: day.day_index,
+    title: day.title,
+    goal: day.goal,
+    items: (items ?? [])
+      .filter((item) => item.day_index === day.day_index)
+      .map((item) => ({
+        id: item.id,
+        category: item.category,
+        label: item.label,
+        order: item.item_order
+      }))
+  }));
+
+  return program.length > 0;
 }
 
 function renderStaticControls() {
@@ -314,10 +370,10 @@ function renderToday() {
 
   els.todayTitle.textContent = `${formatDayWithDate(day.day)} - ${day.title}`;
   els.todayGoal.textContent = day.goal;
-  els.todayChecklist.innerHTML = day.items.map(([key, label]) => `
+  els.todayChecklist.innerHTML = getDayItems(day).map((item) => `
     <label class="check-row">
-      <input type="checkbox" data-day="${day.day}" data-key="${key}" ${log.checked_items[key] ? "checked" : ""}>
-      <span>${label}</span>
+      <input type="checkbox" data-day="${day.day}" data-item-id="${item.id}" ${isItemChecked(item, log) ? "checked" : ""}>
+      <span>${item.label}</span>
     </label>
   `).join("");
 
@@ -343,8 +399,9 @@ function renderRecovery() {
 function renderProgram() {
   els.programList.innerHTML = program.map((day) => {
     const log = appState.logs[day.day];
-    const completeCount = day.items.filter(([key]) => Boolean(log?.checked_items?.[key])).length;
-    const isComplete = completeCount === day.items.length;
+    const items = getDayItems(day);
+    const completeCount = items.filter((item) => isItemChecked(item, log)).length;
+    const isComplete = completeCount === items.length;
     const isSelected = day.day === activeDay;
     const isCurrent = day.day === currentDay;
     return `
@@ -358,7 +415,7 @@ function renderProgram() {
           <p class="day-goal">${day.goal}</p>
         </div>
         <ul class="mini-list">
-          ${day.items.map(([, label]) => `<li>${label}</li>`).join("")}
+          ${items.map((item) => `<li>${item.label}</li>`).join("")}
         </ul>
       </article>
     `;
@@ -367,9 +424,17 @@ function renderProgram() {
 
 function handleCheckChange(event) {
   const day = Number(event.target.dataset.day);
-  const key = event.target.dataset.key;
-  appState.logs[day].checked_items[key] = event.target.checked;
-  scheduleSave(day);
+  const itemId = event.target.dataset.itemId;
+  const item = findProgramItem(day, itemId);
+
+  if (supabaseClient && item && !item.isLegacy) {
+    appState.itemChecks[String(item.id)] = event.target.checked;
+    scheduleItemCheckSave(day, item.id, event.target.checked);
+  } else {
+    appState.logs[day].checked_items[itemId] = event.target.checked;
+    scheduleSave(day);
+  }
+
   renderSummary();
   renderProgram();
 }
@@ -413,6 +478,30 @@ function scheduleSave(day, delay = 120) {
   setSaveStatus("저장 중");
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => saveLog(day), delay);
+}
+
+function scheduleItemCheckSave(day, itemId, isChecked, delay = 120) {
+  setSaveStatus("저장 중");
+  window.setTimeout(() => saveItemCheck(day, itemId, isChecked), delay);
+}
+
+async function saveItemCheck(day, itemId, isChecked) {
+  if (!supabaseClient) {
+    localStorage.setItem("health-checker-state", JSON.stringify(appState));
+    setSaveStatus("로컬 저장됨");
+    return;
+  }
+
+  const { error } = await supabaseClient
+    .from("daily_item_checks")
+    .upsert({
+      day_index: day,
+      item_id: itemId,
+      is_checked: isChecked,
+      updated_at: new Date().toISOString()
+    }, { onConflict: "day_index,item_id" });
+
+  setSaveStatus(error ? "저장 실패" : "저장됨");
 }
 
 function syncRecoveryDraft() {
@@ -461,7 +550,6 @@ async function saveLog(day) {
     .upsert({
       day_index: log.day_index,
       log_date: log.log_date,
-      checked_items: log.checked_items,
       fatigue_score: log.fatigue_score,
       focus_score: log.focus_score,
       sleep_score: log.sleep_score,
@@ -496,6 +584,34 @@ function normalizeLog(log) {
     stability_score: log.stability_score,
     memo: log.memo ?? ""
   };
+}
+
+function getDayItems(day) {
+  return day.items.map((item) => {
+    if (Array.isArray(item)) {
+      return {
+        id: item[0],
+        label: item[1],
+        isLegacy: true
+      };
+    }
+
+    return item;
+  });
+}
+
+function findProgramItem(day, itemId) {
+  const targetDay = program.find((item) => item.day === day);
+  if (!targetDay) return null;
+  return getDayItems(targetDay).find((item) => String(item.id) === String(itemId));
+}
+
+function isItemChecked(item, log) {
+  if (item.isLegacy) {
+    return Boolean(log?.checked_items?.[item.id]);
+  }
+
+  return Boolean(appState.itemChecks?.[String(item.id)]);
 }
 
 function formatDayWithDate(dayIndex) {
