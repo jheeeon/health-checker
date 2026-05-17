@@ -117,7 +117,7 @@ let recoveryDraft = {};
 
 const els = {
   todayLabel: document.querySelector("#todayLabel"),
-  progressLabel: document.querySelector("#progressLabel"),
+  todaySummaryButton: document.querySelector("#todaySummaryButton"),
   saveStatus: document.querySelector("#saveStatus"),
   configNotice: document.querySelector("#configNotice"),
   todayTitle: document.querySelector("#todayTitle"),
@@ -235,6 +235,10 @@ function renderStaticControls() {
     saveRecoveryDraft();
   });
 
+  els.todaySummaryButton.addEventListener("click", () => {
+    selectDay(currentDay);
+  });
+
   els.programList.addEventListener("click", (event) => {
     const card = event.target.closest("[data-day-card]");
     if (!card) return;
@@ -258,14 +262,7 @@ function render() {
 }
 
 function renderSummary() {
-  const done = program.reduce((sum, day) => {
-    const log = appState.logs[day.day];
-    const complete = day.items.every(([key]) => Boolean(log?.checked_items?.[key]));
-    return sum + (complete ? 1 : 0);
-  }, 0);
-
   els.todayLabel.textContent = formatDayWithDate(currentDay);
-  els.progressLabel.textContent = `${Math.round((done / program.length) * 100)}%`;
 }
 
 function renderToday() {

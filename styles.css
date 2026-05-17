@@ -93,7 +93,7 @@ h3 {
 
 .summary-panel {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 1px;
   overflow: hidden;
   border: 1px solid var(--line);
@@ -102,10 +102,27 @@ h3 {
   box-shadow: var(--shadow);
 }
 
-.summary-panel div {
+.summary-panel div,
+.summary-action {
   min-width: 0;
   padding: 16px;
+  border: 0;
   background: var(--surface);
+  color: var(--ink);
+  text-align: left;
+}
+
+.summary-action {
+  cursor: pointer;
+}
+
+.summary-action:hover {
+  background: #fbfcf8;
+}
+
+.summary-action:focus-visible {
+  outline: 3px solid rgba(217, 139, 69, 0.45);
+  outline-offset: -3px;
 }
 
 .summary-panel strong {

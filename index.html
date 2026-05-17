@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="light">
     <title>Health Checker</title>
-    <link rel="stylesheet" href="styles.css?v=20260517-2">
+    <link rel="stylesheet" href="styles.css?v=20260517-3">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="config.js?v=20260517-2"></script>
-    <script defer src="app.js?v=20260517-2"></script>
+    <script src="config.js?v=20260517-3"></script>
+    <script defer src="app.js?v=20260517-3"></script>
   </head>
   <body>
     <main class="app-shell">
@@ -19,14 +19,10 @@
           <p class="lede">건강하게 오래 지속할 수 있는 생체 리듬 형성 프로그램</p>
         </div>
         <section class="summary-panel" aria-label="진행 요약">
-          <div>
+          <button class="summary-action" type="button" id="todaySummaryButton">
             <span class="summary-label">오늘</span>
             <strong id="todayLabel">-</strong>
-          </div>
-          <div>
-            <span class="summary-label">진행률</span>
-            <strong id="progressLabel">0%</strong>
-          </div>
+          </button>
           <div>
             <span class="summary-label">저장 상태</span>
             <strong id="saveStatus">준비 중</strong>
