@@ -24,6 +24,10 @@ body {
   color: var(--ink);
 }
 
+[hidden] {
+  display: none !important;
+}
+
 button,
 textarea {
   font: inherit;
@@ -322,4 +326,3 @@ textarea {
     font-size: 2.6rem;
   }
 }
-
