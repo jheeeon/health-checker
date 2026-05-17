@@ -112,6 +112,8 @@ let appState = structuredClone(fallbackState);
 let supabaseClient = null;
 let saveTimer = null;
 let activeDay = 1;
+let currentDay = 1;
+let recoveryDraft = {};
 
 const els = {
   todayLabel: document.querySelector("#todayLabel"),
@@ -123,6 +125,7 @@ const els = {
   todayChecklist: document.querySelector("#todayChecklist"),
   scoreGrid: document.querySelector("#scoreGrid"),
   memoInput: document.querySelector("#memoInput"),
+  saveRecoveryButton: document.querySelector("#saveRecoveryButton"),
   programList: document.querySelector("#programList")
 };
 
@@ -132,7 +135,9 @@ async function init() {
   renderStaticControls();
   configureSupabase();
   await loadState();
-  activeDay = getTodayDayIndex();
+  currentDay = getTodayDayIndex();
+  activeDay = currentDay;
+  syncRecoveryDraft();
   render();
 }
 
@@ -217,14 +222,31 @@ function renderStaticControls() {
     const button = event.target.closest("button[data-score]");
     if (!button) return;
     const field = button.closest("[data-score-field]").dataset.scoreField;
-    appState.logs[activeDay][field] = Number(button.dataset.score);
-    scheduleSave(activeDay);
+    recoveryDraft[field] = Number(button.dataset.score);
     renderRecovery();
   });
 
   els.memoInput.addEventListener("input", () => {
-    appState.logs[activeDay].memo = els.memoInput.value;
-    scheduleSave(activeDay, 500);
+    recoveryDraft.memo = els.memoInput.value;
+    renderRecoverySaveState();
+  });
+
+  els.saveRecoveryButton.addEventListener("click", () => {
+    saveRecoveryDraft();
+  });
+
+  els.programList.addEventListener("click", (event) => {
+    const card = event.target.closest("[data-day-card]");
+    if (!card) return;
+    selectDay(Number(card.dataset.dayCard));
+  });
+
+  els.programList.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    const card = event.target.closest("[data-day-card]");
+    if (!card) return;
+    event.preventDefault();
+    selectDay(Number(card.dataset.dayCard));
   });
 }
 
@@ -242,7 +264,7 @@ function renderSummary() {
     return sum + (complete ? 1 : 0);
   }, 0);
 
-  els.todayLabel.textContent = `${activeDay}일차`;
+  els.todayLabel.textContent = formatDayWithDate(currentDay);
   els.progressLabel.textContent = `${Math.round((done / program.length) * 100)}%`;
 }
 
@@ -250,7 +272,7 @@ function renderToday() {
   const day = program.find((item) => item.day === activeDay);
   const log = appState.logs[activeDay];
 
-  els.todayTitle.textContent = `${day.day}일차 - ${day.title}`;
+  els.todayTitle.textContent = `${formatDayWithDate(day.day)} - ${day.title}`;
   els.todayGoal.textContent = day.goal;
   els.todayChecklist.innerHTML = day.items.map(([key, label]) => `
     <label class="check-row">
@@ -265,17 +287,17 @@ function renderToday() {
 }
 
 function renderRecovery() {
-  const log = appState.logs[activeDay];
-
   scoreFields.forEach(([key]) => {
     document.querySelectorAll(`[data-score-field="${key}"] button`).forEach((button) => {
-      button.classList.toggle("is-selected", Number(button.dataset.score) === log[key]);
+      button.classList.toggle("is-selected", Number(button.dataset.score) === recoveryDraft[key]);
     });
   });
 
-  if (els.memoInput.value !== log.memo) {
-    els.memoInput.value = log.memo ?? "";
+  if (els.memoInput.value !== recoveryDraft.memo) {
+    els.memoInput.value = recoveryDraft.memo ?? "";
   }
+
+  renderRecoverySaveState();
 }
 
 function renderProgram() {
@@ -283,10 +305,12 @@ function renderProgram() {
     const log = appState.logs[day.day];
     const completeCount = day.items.filter(([key]) => Boolean(log?.checked_items?.[key])).length;
     const isComplete = completeCount === day.items.length;
+    const isSelected = day.day === activeDay;
+    const isCurrent = day.day === currentDay;
     return `
-      <article class="day-card ${day.day === activeDay ? "is-today" : ""} ${isComplete ? "is-complete" : ""}">
+      <article class="day-card ${isSelected ? "is-selected" : ""} ${isCurrent ? "is-today" : ""} ${isComplete ? "is-complete" : ""}" data-day-card="${day.day}" tabindex="0" role="button" aria-pressed="${isSelected}">
         <div class="day-meta">
-          <span>${day.day}일차</span>
+          <span>${formatDayWithDate(day.day)}</span>
           <span>${completeCount}/${day.items.length}</span>
         </div>
         <div>
@@ -310,10 +334,49 @@ function handleCheckChange(event) {
   renderProgram();
 }
 
+function selectDay(day) {
+  activeDay = day;
+  syncRecoveryDraft();
+  render();
+  document.querySelector(".today-card")?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
 function scheduleSave(day, delay = 120) {
   setSaveStatus("저장 중");
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => saveLog(day), delay);
+}
+
+function syncRecoveryDraft() {
+  const log = appState.logs[activeDay];
+  recoveryDraft = {
+    fatigue_score: log?.fatigue_score ?? null,
+    focus_score: log?.focus_score ?? null,
+    sleep_score: log?.sleep_score ?? null,
+    stability_score: log?.stability_score ?? null,
+    memo: log?.memo ?? ""
+  };
+}
+
+function renderRecoverySaveState() {
+  const dirty = isRecoveryDirty();
+  els.saveRecoveryButton.disabled = !dirty;
+  els.saveRecoveryButton.textContent = dirty ? "회복 기록 저장" : "저장됨";
+}
+
+function isRecoveryDirty() {
+  const log = appState.logs[activeDay];
+  return scoreFields.some(([key]) => log?.[key] !== recoveryDraft[key]) || (log?.memo ?? "") !== (recoveryDraft.memo ?? "");
+}
+
+function saveRecoveryDraft() {
+  const log = appState.logs[activeDay];
+  scoreFields.forEach(([key]) => {
+    log[key] = recoveryDraft[key];
+  });
+  log.memo = recoveryDraft.memo ?? "";
+  scheduleSave(activeDay);
+  renderRecoverySaveState();
 }
 
 async function saveLog(day) {
@@ -365,6 +428,16 @@ function normalizeLog(log) {
     stability_score: log.stability_score,
     memo: log.memo ?? ""
   };
+}
+
+function formatDayWithDate(dayIndex) {
+  return `${dayIndex}일차 (${formatShortDate(appState.logs[dayIndex]?.log_date)})`;
+}
+
+function formatShortDate(dateString) {
+  if (!dateString) return "--.--.--";
+  const [year, month, day] = dateString.split("-");
+  return `${year.slice(2)}-${month}-${day}`;
 }
 
 function startOfDay(date) {

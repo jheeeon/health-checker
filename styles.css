@@ -237,6 +237,25 @@ textarea {
   line-height: 1.5;
 }
 
+.save-recovery-button {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 14px;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  background: var(--accent);
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.save-recovery-button:disabled {
+  border-color: var(--line);
+  background: var(--surface-muted);
+  color: var(--muted);
+  cursor: default;
+}
+
 .program-section {
   margin-top: 28px;
 }
@@ -255,15 +274,27 @@ textarea {
   display: grid;
   gap: 14px;
   padding: 18px;
+  cursor: pointer;
 }
 
-.day-card.is-today {
+.day-card.is-selected {
   border-color: var(--accent);
   outline: 3px solid rgba(47, 111, 95, 0.16);
 }
 
+.day-card.is-today .day-meta span:first-child::after {
+  content: " 오늘";
+  color: var(--accent);
+  font-weight: 700;
+}
+
 .day-card.is-complete {
   background: var(--surface-muted);
+}
+
+.day-card:focus-visible {
+  outline: 3px solid rgba(217, 139, 69, 0.45);
+  outline-offset: 3px;
 }
 
 .day-meta {
